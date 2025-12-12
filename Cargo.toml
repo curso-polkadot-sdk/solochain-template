@@ -77,7 +77,6 @@ sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6
 sp-offchain = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }
 sp-session = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }
 sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }
 sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }
 sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", rev = "dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76", default-features = false }

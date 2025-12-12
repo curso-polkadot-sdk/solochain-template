@@ -52,16 +52,26 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use sp_runtime::traits::{
-	Member,
-	// AtLeast32Bit,
-	AtLeast32BitUnsigned,
-	// MaybeSerialize,
-	MaybeSerializeDeserialize,
-	// Hash as HashT,
-	MaybeDisplay
-};
+use codec::{Codec, DecodeWithMemTracking, HasCompact};
 use frame_support::Parameter;
+use scale_info::TypeInfo;
+use sp_runtime::{
+	sp_std::fmt::Debug,
+	traits::{AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, Member, One},
+	FixedPointOperand,
+};
+
+/// Apelido utilizado para se referir ao `Saldo` definido
+/// na configuração desse pallet.
+/// ```rust
+/// # use pallet_template::{SaldoOf, Config};
+/// // fazer isso:
+/// fn foo<T: Config>(saldo: <T as pallet_template::Config>::Saldo) {};
+///
+/// // é equivalente a fazer isso
+/// fn bar<T: Config>(saldo: SaldoOf<T>) {}
+/// ```
+pub type SaldoOf<T> = <T as pallet::Config>::Saldo;
 
 // Every callable function or "dispatchable" a pallet exposes must have weight values that correctly
 // estimate a dispatchable's execution time. The benchmarking module is used to calculate weights
@@ -69,15 +79,19 @@ use frame_support::Parameter;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod weights;
-pub use weights::*;
+pub use weights::{SubstrateWeight, WeightInfo};
 
 // All pallet logic is defined in its own module and must be annotated by the `pallet` attribute.
 #[frame_support::pallet]
 pub mod pallet {
 	// Import various useful types required by all FRAME pallets.
-	use super::*;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
+	use super::{
+		AtLeast32BitUnsigned, CheckedAdd, Codec, Debug, DecodeWithMemTracking, FixedPointOperand,
+		HasCompact, MaybeSerializeDeserialize, Member, One, Parameter, SaldoOf, TypeInfo,
+		WeightInfo,
+	};
+	use frame_support::pallet_prelude::{DispatchResult, IsType, MaxEncodedLen, StorageValue};
+	use frame_system::pallet_prelude::{ensure_signed, OriginFor};
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
@@ -95,29 +109,33 @@ pub mod pallet {
 		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// Tipo que representa um saldo na blockchain
 		type Saldo: Parameter
 			+ Member
-			+ MaybeSerializeDeserialize
-			+ Copy
-			+ Default
-			+ MaybeDisplay
 			+ AtLeast32BitUnsigned
+			+ Codec
+			+ HasCompact<Type: DecodeWithMemTracking>
 			+ Default
-			+ MaxEncodedLen;
+			+ Copy
+			+ MaybeSerializeDeserialize
+			+ Debug
+			+ MaxEncodedLen
+			+ TypeInfo
+			+ One
+			+ FixedPointOperand;
 
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
-	/// A storage item for this pallet.
+	/// Valor é um número armazenado nesse pallet.
 	///
-	/// In this template, we are declaring a storage item called `Something` that stores a single
-	/// `u32` value. Learn more about runtime storage here: <https://docs.substrate.io/build/runtime-storage/>
+	/// Nesse template esta sendo declarado um Item no storage chamado `Valor` que armazena um
+	/// valor do tipo `Config::Saldo`.
+	///
+	/// Aprenda mais sobre storage aqui: <https://docs.substrate.io/build/runtime-storage/>
 	#[pallet::storage]
-	pub type Valor<T> = StorageValue<_, u32>;
-
-	// #[pallet::storage]
-	// pub type Valores<T> = StorageMap<_, u32>;
+	pub type Valor<T> = StorageValue<_, <T as Config>::Saldo>;
 
 	/// Events that functions in this pallet can emit.
 	///
@@ -133,9 +151,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A user has successfully set a new value.
-		SomethingStored {
+		ValorArmazenado {
 			/// The new value set.
-			something: u32,
+			valor: SaldoOf<T>,
 			/// The account who set the new value.
 			who: T::AccountId,
 		},
@@ -177,16 +195,16 @@ pub mod pallet {
 		/// It checks that the _origin_ for this call is _Signed_ and returns a dispatch
 		/// error if it isn't. Learn more about origins here: <https://docs.substrate.io/build/origins/>
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::do_something())]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::alterar_valor())]
+		pub fn alterar_valor(origin: OriginFor<T>, valor: SaldoOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			let who = ensure_signed(origin)?;
 
 			// Update storage.
-			Valor::<T>::put(something);
+			Valor::<T>::put(valor);
 
 			// Emit an event.
-			Self::deposit_event(Event::SomethingStored { something, who });
+			Self::deposit_event(Event::ValorArmazenado { valor, who });
 
 			// Return a successful `DispatchResult`
 			Ok(())
@@ -217,7 +235,8 @@ pub mod pallet {
 				Some(old) => {
 					// Increment the value read from storage. This will cause an error in the event
 					// of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+					let one = <SaldoOf<T> as One>::one();
+					let new = old.checked_add(&one).ok_or(Error::<T>::StorageOverflow)?;
 					// Update the value in storage with the incremented result.
 					Valor::<T>::put(new);
 					Ok(())
@@ -225,30 +244,42 @@ pub mod pallet {
 			}
 		}
 
+		/// Método que incrementa o `Valor` em uma unidade.
+		/// pode retornar um erro em dois casos:
+		/// - O valor não foi definido
+		/// - Overflow
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::do_something())]
+		#[pallet::weight(T::WeightInfo::alterar_valor())]
 		pub fn incrementar(origin: OriginFor<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
+			// Verifica se essa `extrinsic` foi assinada:
+			// - Se foi assinada, retorna quem assinou.
+			// - Se não foi assinada, retorna um erro.
 			let who = ensure_signed(origin)?;
 
-			// Read a value from storage.
+			// Le o `Valor` que esta armazenado no storage.
 			let valor = match Valor::<T>::get() {
-				// Return an error if the value has not been set.
-				None => return Err(Error::<T>::NoneValue.into()),
+				None => {
+					// Valor não existe, retorne um erro, isso irá reverter
+					// essa transação.
+					return Err(Error::<T>::NoneValue.into())
+				},
 				Some(old) => {
-					// Increment the value read from storage. This will cause an error in the event
-					// of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
+					// Incrementa o `Valor` em 1 unidade.
+					// Um erro será retornado em caso de overflow.
+					let one = <SaldoOf<T> as One>::one();
+					let new = old.checked_add(&one).ok_or(Error::<T>::StorageOverflow)?;
+
+					// Atualiza o valor armazenado no storage.
 					Valor::<T>::put(new);
 					new
 				},
 			};
 
-			// Emit an event.
-			Self::deposit_event(Event::SomethingStored { something: valor, who });
+			// Emite um evento
+			Self::deposit_event(Event::ValorArmazenado { valor, who });
 
-			// Return a successful `DispatchResult`
+			// Retorna que a transação foi executa com sucesso.
 			Ok(())
 		}
 	}

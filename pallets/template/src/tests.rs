@@ -7,11 +7,11 @@ fn it_works_for_default_value() {
 		// Go past genesis block so events get deposited
 		System::set_block_number(1);
 		// Dispatch a signed extrinsic.
-		assert_ok!(Template::do_something(RuntimeOrigin::signed(1), 42));
+		assert_ok!(Template::alterar_valor(RuntimeOrigin::signed(1), 42));
 		// Read pallet storage and assert an expected result.
 		assert_eq!(Valor::<Test>::get(), Some(42));
 		// Assert that the correct event was deposited
-		System::assert_last_event(Event::SomethingStored { something: 42, who: 1 }.into());
+		System::assert_last_event(Event::ValorArmazenado { valor: 42, who: 1 }.into());
 	});
 }
 

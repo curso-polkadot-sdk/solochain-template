@@ -34,7 +34,7 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_template.
 pub trait WeightInfo {
-	fn do_something() -> Weight;
+	fn alterar_valor() -> Weight;
 	fn cause_error() -> Weight;
 }
 
@@ -43,7 +43,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: Template Something (r:0 w:1)
 	/// Proof: Template Something (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	fn do_something() -> Weight {
+	fn alterar_valor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -68,7 +68,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	/// Storage: Template Something (r:0 w:1)
 	/// Proof: Template Something (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	fn do_something() -> Weight {
+	fn alterar_valor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
