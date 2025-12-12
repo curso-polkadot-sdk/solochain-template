@@ -52,6 +52,17 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use sp_runtime::traits::{
+	Member,
+	// AtLeast32Bit,
+	AtLeast32BitUnsigned,
+	// MaybeSerialize,
+	MaybeSerializeDeserialize,
+	// Hash as HashT,
+	MaybeDisplay
+};
+use frame_support::Parameter;
+
 // Every callable function or "dispatchable" a pallet exposes must have weight values that correctly
 // estimate a dispatchable's execution time. The benchmarking module is used to calculate weights
 // for each dispatchable and generates this pallet's weight.rs file. Learn more about benchmarking here: https://docs.substrate.io/test/benchmark/
@@ -83,6 +94,17 @@ pub mod pallet {
 		/// The overarching runtime event type.
 		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		type Saldo: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ Copy
+			+ Default
+			+ MaybeDisplay
+			+ AtLeast32BitUnsigned
+			+ Default
+			+ MaxEncodedLen;
+
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -92,7 +114,10 @@ pub mod pallet {
 	/// In this template, we are declaring a storage item called `Something` that stores a single
 	/// `u32` value. Learn more about runtime storage here: <https://docs.substrate.io/build/runtime-storage/>
 	#[pallet::storage]
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type Valor<T> = StorageValue<_, u32>;
+
+	// #[pallet::storage]
+	// pub type Valores<T> = StorageMap<_, u32>;
 
 	/// Events that functions in this pallet can emit.
 	///
@@ -158,7 +183,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Update storage.
-			Something::<T>::put(something);
+			Valor::<T>::put(something);
 
 			// Emit an event.
 			Self::deposit_event(Event::SomethingStored { something, who });
@@ -186,7 +211,7 @@ pub mod pallet {
 			let _who = ensure_signed(origin)?;
 
 			// Read a value from storage.
-			match Something::<T>::get() {
+			match Valor::<T>::get() {
 				// Return an error if the value has not been set.
 				None => Err(Error::<T>::NoneValue.into()),
 				Some(old) => {
@@ -194,10 +219,37 @@ pub mod pallet {
 					// of overflow.
 					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
 					// Update the value in storage with the incremented result.
-					Something::<T>::put(new);
+					Valor::<T>::put(new);
 					Ok(())
 				},
 			}
+		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::do_something())]
+		pub fn incrementar(origin: OriginFor<T>) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer.
+			let who = ensure_signed(origin)?;
+
+			// Read a value from storage.
+			let valor = match Valor::<T>::get() {
+				// Return an error if the value has not been set.
+				None => return Err(Error::<T>::NoneValue.into()),
+				Some(old) => {
+					// Increment the value read from storage. This will cause an error in the event
+					// of overflow.
+					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+					// Update the value in storage with the incremented result.
+					Valor::<T>::put(new);
+					new
+				},
+			};
+
+			// Emit an event.
+			Self::deposit_event(Event::SomethingStored { something: valor, who });
+
+			// Return a successful `DispatchResult`
+			Ok(())
 		}
 	}
 }

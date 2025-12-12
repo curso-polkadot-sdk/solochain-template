@@ -24,10 +24,13 @@ frame-benchmarking = { optional = true, workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 
+# frame deps
+sp-runtime = { workspace = true, features = ["serde"] }
+sp-std = { workspace = true, default-features = true }
+
 [dev-dependencies]
 sp-core = { workspace = true, default-features = true }
 sp-io = { workspace = true, default-features = true }
-sp-runtime = { workspace = true, default-features = true }
 
 [features]
 default = ["std"]
