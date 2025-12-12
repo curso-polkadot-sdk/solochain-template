@@ -25,7 +25,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 
 # frame deps
-sp-runtime = { workspace = true, features = ["serde"] }
+sp-runtime = { workspace = true, default-features = false, features = ["serde"] }
 
 [dev-dependencies]
 sp-core = { workspace = true, default-features = true }
