@@ -97,6 +97,7 @@ impl frame_system::Config for Runtime {
 	type SingleBlockMigrations = SingleBlockMigrations;
 }
 
+// Algoritmo de Consenso (PoA)
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
@@ -105,6 +106,9 @@ impl pallet_aura::Config for Runtime {
 	type SlotDuration = pallet_aura::MinimumPeriodTimesTwo<Runtime>;
 }
 
+// Finality Gadget
+// GRANDPA (GHOST-based Recursive ANcestor Deriving Prefix Agreement)
+// ref: https://wiki.polkadot.com/learn/learn-consensus/#finality-gadget-grandpa
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 
@@ -117,6 +121,8 @@ impl pallet_grandpa::Config for Runtime {
 	type EquivocationReportSystem = ();
 }
 
+// Armazena o horário que o bloco atual foi produzido
+// O tempo é monotônico e medido em milisegundos
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
@@ -125,6 +131,7 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = ();
 }
 
+// Controla os balanços de contas.
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ();
@@ -148,6 +155,7 @@ parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
 }
 
+// Controla quanto é cobrado em taxas de transação
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
@@ -158,13 +166,19 @@ impl pallet_transaction_payment::Config for Runtime {
 	type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
 
+// Conta SUDO que pode chamar métodos privilegiados nessa
+// blockchain, como:
+// - Imprimir mais tokens no pallet-balances.
+// - Atualizar o RUNTIME da blockchain
+// - etc...
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-/// Configure the pallet-template in pallets/template.
+// Configuração do pallet-template
+// Veja o código fonte na pasta `pallets/template`.
 impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Saldo = Balance;

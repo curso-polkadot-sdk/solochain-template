@@ -20,6 +20,9 @@ codec = { features = ["derive"], workspace = true }
 scale-info = { features = ["derive", "serde"], workspace = true }
 serde_json = { features = ["alloc"], workspace = true, default-features = false }
 
+# My pallets
+pallet-template = { workspace = true }
+
 # frame
 frame-executive = { workspace = true }
 frame-metadata-hash-extension = { workspace = true }
@@ -58,9 +61,6 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 # Used for runtime benchmarking
 frame-benchmarking = { optional = true, workspace = true }
 frame-system-benchmarking = { optional = true, workspace = true }
-
-# The pallet in this template.
-pallet-template = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { optional = true, workspace = true, default-features = true }

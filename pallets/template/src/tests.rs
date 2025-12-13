@@ -11,7 +11,7 @@ fn it_works_for_default_value() {
 		// Read pallet storage and assert an expected result.
 		assert_eq!(Valor::<Test>::get(), Some(42));
 		// Assert that the correct event was deposited
-		System::assert_last_event(Event::ValorArmazenado { valor: 42, who: 1 }.into());
+		System::assert_last_event(Event::ValorArmazenado { valor: 42, conta: 1 }.into());
 	});
 }
 

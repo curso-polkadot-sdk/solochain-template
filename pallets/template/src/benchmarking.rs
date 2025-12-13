@@ -31,5 +31,16 @@ mod benchmarks {
 		assert_eq!(Valor::<T>::get(), Some(hundred_one));
 	}
 
+	#[benchmark]
+	fn incrementar() {
+		let hundred = SaldoOf::<T>::from(100u32);
+		let hundred_one = SaldoOf::<T>::from(101u32);
+		Valor::<T>::put(hundred);
+		let caller: T::AccountId = whitelisted_caller();
+		#[extrinsic_call]
+		incrementar(RawOrigin::Signed(caller));
+		assert_eq!(Valor::<T>::get(), Some(hundred_one));
+	}
+
 	impl_benchmark_test_suite!(Template, crate::mock::new_test_ext(), crate::mock::Test);
 }

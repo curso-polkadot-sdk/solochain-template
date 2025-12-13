@@ -6,11 +6,7 @@ license = "MIT-0"
 repository = "https://github.com/paritytech/polkadot-sdk-solochain-template.git"
 
 [workspace]
-members = [
-	"node",
-	"pallets/template",
-	"runtime",
-]
+members = ["node", "pallets/template", "runtime"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -173,7 +169,7 @@ parking_lot_core = { opt-level = 3 }
 percent-encoding = { opt-level = 3 }
 polkavm-linker = { opt-level = 3 }
 primitive-types = { opt-level = 3 }
-reed-solomon-novelpoly = { opt-level = 3 }
+# reed-solomon-novelpoly = { opt-level = 3 }
 ring = { opt-level = 3 }
 rustls = { opt-level = 3 }
 sha2 = { opt-level = 3 }

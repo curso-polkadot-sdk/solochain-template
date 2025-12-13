@@ -135,7 +135,7 @@ pub mod pallet {
 	///
 	/// Aprenda mais sobre storage aqui: <https://docs.substrate.io/build/runtime-storage/>
 	#[pallet::storage]
-	pub type Valor<T> = StorageValue<_, <T as Config>::Saldo>;
+	pub type Valor<T: Config> = StorageValue<_, T::Saldo>;
 
 	/// Events that functions in this pallet can emit.
 	///
@@ -155,7 +155,7 @@ pub mod pallet {
 			/// The new value set.
 			valor: SaldoOf<T>,
 			/// The account who set the new value.
-			who: T::AccountId,
+			conta: T::AccountId,
 		},
 	}
 
@@ -198,13 +198,13 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::alterar_valor())]
 		pub fn alterar_valor(origin: OriginFor<T>, valor: SaldoOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
-			let who = ensure_signed(origin)?;
+			let conta = ensure_signed(origin)?;
 
 			// Update storage.
 			Valor::<T>::put(valor);
 
 			// Emit an event.
-			Self::deposit_event(Event::ValorArmazenado { valor, who });
+			Self::deposit_event(Event::ValorArmazenado { valor, conta });
 
 			// Return a successful `DispatchResult`
 			Ok(())
@@ -248,14 +248,14 @@ pub mod pallet {
 		/// pode retornar um erro em dois casos:
 		/// - O valor não foi definido
 		/// - Overflow
-		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::alterar_valor())]
+		#[pallet::call_index(20)]
+		#[pallet::weight(T::WeightInfo::incrementar())]
 		pub fn incrementar(origin: OriginFor<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// Verifica se essa `extrinsic` foi assinada:
 			// - Se foi assinada, retorna quem assinou.
 			// - Se não foi assinada, retorna um erro.
-			let who = ensure_signed(origin)?;
+			let conta = ensure_signed(origin)?;
 
 			// Le o `Valor` que esta armazenado no storage.
 			let valor = match Valor::<T>::get() {
@@ -277,7 +277,7 @@ pub mod pallet {
 			};
 
 			// Emite um evento
-			Self::deposit_event(Event::ValorArmazenado { valor, who });
+			Self::deposit_event(Event::ValorArmazenado { valor, conta });
 
 			// Retorna que a transação foi executa com sucesso.
 			Ok(())
