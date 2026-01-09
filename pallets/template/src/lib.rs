@@ -90,7 +90,19 @@ pub mod pallet {
 		HasCompact, MaybeSerializeDeserialize, Member, One, Parameter, SaldoOf, TypeInfo,
 		WeightInfo,
 	};
-	use frame_support::pallet_prelude::{DispatchResult, IsType, MaxEncodedLen, StorageValue};
+	use frame_support::pallet_prelude::{
+		DispatchResult,
+		IsType,
+		MaxEncodedLen,
+		StorageDoubleMap,
+		StorageValue,
+		Identity,        // -> CHAVE é uniformemente distribuida, e o usuário não consegue escolher ela.
+		Twox64Concat,    // -> CHAVE não é uniformemente distribuida, e o usuário não consegue escolher ela.
+		Twox128,
+		Blake2_128,      // -> O usuário pode influenciar o valor da storage key
+		Blake2_128Concat,
+	};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::{ensure_signed, OriginFor};
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
@@ -137,6 +149,43 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Valor<T: Config> = StorageValue<_, T::Saldo>;
 
+	//       FUNÇÃO(X)        |      SAIDA
+	// -----------------------|-----------------------
+	//   Identity(X)          |  X
+	//   Twox128(X)           |  Twox64(X, 0) + Twox64(X, 1)
+	//   Blake2_128(X)        |  Blake2_128(X)
+	//   Twox64Concat(X)      |  Twox64(X) + X
+	//   Blake2_128Concat(X)  |  Blake2_128(X) + X
+	//
+	//        FUNÇÃO(X)       |      QUANDO USAR
+	// -----------------------|------------------------------------------------
+	//                        |  A chave `X` é uniformemente distribuida
+	//        Identity        |  Um adversário não consegue escolher a chave `X`.
+	//                        |  Ex: A chave é igual ao blake2 do valor armazenado.
+	// -----------------------|------------------------------------------------
+	//         Twox128        |  A chave `X` não é uniformemente distribuida.
+	//         Twox64         |  Um adversário não consegue escolher a chave `X`.
+	//                        |  Ex: A entrada é uma texto, nome do pallet, etc.
+	// -----------------------|------------------------------------------------
+	//        Blake2_256      |  Um adversário consegue escolher a chave `X`
+	//        Blake2_128      |  
+	//                        |  Ex: Mais segura, na duvída sempre utiliza essas
+	// ------------------------------------------------------------------------
+	//
+	// # Quando utilizar as varições com `*Concat` como `Blake2_128Concat`, etc.
+	// DICA: Utilize variações com `*_CONCAT` quando a chave X é pequena e precisa
+	// ser listada on-chain ou off-chain.
+
+	/// Metadata of a collection.
+	#[pallet::storage]
+	pub type Tokens<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,   // Função que recebe a CHAVE e retorna o sufixo da storage key.
+		u32,                // tipo da CHAVE
+		T::AccountId,       // tipo do VALOR
+		OptionQuery,        // Define o que é retornado ao ler uma CHAVE que não existe.
+	>;
+
 	/// Events that functions in this pallet can emit.
 	///
 	/// Events are a simple means of indicating to the outside world (such as dApps, chain explorers
@@ -173,6 +222,12 @@ pub mod pallet {
 		NoneValue,
 		/// There was an attempt to increment the value in storage over `u32::MAX`.
 		StorageOverflow,
+		/// O token já existe
+		TokenJaExiste,
+		/// O token não existe
+		TokenNotFound,
+		/// O token não existe
+		Unauthorized,
 	}
 
 	/// The pallet's dispatchable functions ([`Call`]s).
@@ -248,7 +303,7 @@ pub mod pallet {
 		/// pode retornar um erro em dois casos:
 		/// - O valor não foi definido
 		/// - Overflow
-		#[pallet::call_index(20)]
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::incrementar())]
 		pub fn incrementar(origin: OriginFor<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
@@ -280,6 +335,40 @@ pub mod pallet {
 			Self::deposit_event(Event::ValorArmazenado { valor, conta });
 
 			// Retorna que a transação foi executa com sucesso.
+			Ok(())
+		}
+
+		/// Cria um novo NFT e o transfere para a conta de quem assinou a transação.
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::incrementar())]
+		pub fn mint(origin: OriginFor<T>, token_id: u32) -> DispatchResult {
+			let conta = ensure_signed(origin)?;
+
+			if !Tokens::<T>::contains_key(&token_id)  {
+				Tokens::<T>::insert(token_id, conta);
+			} else {
+				return Err(Error::<T>::TokenJaExiste.into());
+			}
+
+			Ok(())
+		}
+
+		/// Destroi um NFT se quem assinou a transação for o dono dele.
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::incrementar())]
+		pub fn burn(origin: OriginFor<T>, token_id: u32) -> DispatchResult {
+			let conta = ensure_signed(origin)?;
+			
+			if let Some(owner) = Tokens::<T>::get(&token_id) {
+				if conta == owner {
+					Tokens::<T>::remove(&token_id);
+				} else {
+					return Err(Error::<T>::Unauthorized.into());
+				} 
+			} else {
+				return Err(Error::<T>::TokenNotFound.into());
+			}
+
 			Ok(())
 		}
 	}
