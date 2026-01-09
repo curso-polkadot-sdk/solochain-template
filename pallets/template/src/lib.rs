@@ -183,7 +183,7 @@ pub mod pallet {
 	// -----------------------|------------------------------------------------
 	//         Twox128        |  A chave `X` não é uniformemente distribuida.
 	//         Twox64         |  Um adversário não consegue escolher a chave `X`.
-	//                        |  Ex: A entrada é uma texto, nome do pallet, etc.
+	//                        |  Ex: A entrada é um numero sequencial, um texto, etc.
 	// -----------------------|------------------------------------------------
 	//        Blake2_256      |  Um adversário consegue escolher a chave `X`
 	//        Blake2_128      |  Ex: Mais segura, na duvída sempre utilize essas.
