@@ -97,7 +97,7 @@ pub mod pallet {
 
 		// ## STORAGE ##
 		// Define como os dados são armazenados, encodados e lidos.
-		// Todos os storages definido no pallet possuem o prefixo:
+		// Todos os storages definidos no pallet possuem o mesmo prefixo:
 		// Twox128($NOME_PALLET) + Twox128($NOME_STORAGE)
 		//
 		StorageValue,        // Armazena um único valor.
@@ -106,7 +106,7 @@ pub mod pallet {
 		// StorageNMap,      // Mapeia N chaves para valor:    [..n] -> value
 
 		// ## STORAGE HASHER ##
-		// É uma função que mapeiam uma chave `X` para bytes que serão concatenados
+		// É uma função que mapeia uma chave `X` para bytes que serão concatenados
 		// na chave final do storage, lembre-se que é um banco de dados chave-valor.
 		// Código: https://github.com/paritytech/polkadot-sdk/blob/polkadot-stable2512/substrate/primitives/crypto/hashing/src/lib.rs#L63-L123
 		// NOTA: `a | b` significa concatenar a e b.
