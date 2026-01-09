@@ -94,15 +94,40 @@ pub mod pallet {
 		DispatchResult,
 		IsType,
 		MaxEncodedLen,
-		StorageDoubleMap,
-		StorageValue,
-		Identity,        // -> CHAVE é uniformemente distribuida, e o usuário não consegue escolher ela.
-		Twox64Concat,    // -> CHAVE não é uniformemente distribuida, e o usuário não consegue escolher ela.
-		Twox128,
-		Blake2_128,      // -> O usuário pode influenciar o valor da storage key
-		Blake2_128Concat,
+
+		// ## STORAGE ##
+		// Define como os dados são armazenados, encodados e lidos.
+		// Todos os storages definido no pallet possuem o prefixo:
+		// Twox128($NOME_PALLET) + Twox128($NOME_STORAGE)
+		//
+		StorageValue,        // Armazena um único valor.
+		StorageMap,          // Mapeia chave para valor:        key  -> value
+		// StorageDoubleMap, // Mapeia duas chaves para valor: [x,y] -> value
+		// StorageNMap,      // Mapeia N chaves para valor:    [..n] -> value
+
+		// ## STORAGE HASHER ##
+		// É uma função que mapeiam uma chave `X` para bytes que serão concatenados
+		// na chave final do storage, lembre-se que é um banco de dados chave-valor.
+		// Código: https://github.com/paritytech/polkadot-sdk/blob/polkadot-stable2512/substrate/primitives/crypto/hashing/src/lib.rs#L63-L123
+		// NOTA: `a | b` significa concatenar a e b.
+		//
+		// Identity,         // f(x) = x
+		// Twox64Concat,     // f(x) = xxhash64(x, 0) | x
+		// Twox128,          // f(x) = xxhash64(x, 0) | xxhash64(x, 1)
+		// Twox256,          // f(x) = xxhash64(x, 0) | xxhash64(x, 1) | xxhash64(x, 2) | xxhash64(x, 3)
+		// Twox64Concat,     // f(x) = xxhash64(x, 0) | x
+		// Blake2_128,       // f(x) = blake2b(x, 128)
+		// Blake2_256,       // f(x) = blake2b(x, 256)
+		Blake2_128Concat,    // f(x) = blake2b(x, 128) | x
+
+		// ## QUERIES ##
+		// Definem o que será retornado por um MAP se a chave não existir do storage.
+		// IMPORTANTE: Isso tbm afeta o que será lido pelo cliente, ex: polkadot-api web.
+		//
+		OptionQuery,         // Se a chave não existir, retorne Option::None.       (null no javascript)
+		// ValueQuery,       // Se a chave não existir, retorne Default::default(). (valor default)
+		// ResultQuery,      // Se a chave não existir, retorne um Result::Err.     (Error no javascript)
 	};
-	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::{ensure_signed, OriginFor};
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
