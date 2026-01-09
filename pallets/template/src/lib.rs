@@ -112,7 +112,6 @@ pub mod pallet {
 		// NOTA: `a | b` significa concatenar a e b.
 		//
 		// Identity,         // f(x) = x
-		// Twox64Concat,     // f(x) = xxhash64(x, 0) | x
 		// Twox128,          // f(x) = xxhash64(x, 0) | xxhash64(x, 1)
 		// Twox256,          // f(x) = xxhash64(x, 0) | xxhash64(x, 1) | xxhash64(x, 2) | xxhash64(x, 3)
 		// Twox64Concat,     // f(x) = xxhash64(x, 0) | x
