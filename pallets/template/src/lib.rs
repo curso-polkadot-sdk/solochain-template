@@ -174,14 +174,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Valor<T: Config> = StorageValue<_, T::Saldo>;
 
-	//       FUNÇÃO(X)        |      SAIDA
-	// -----------------------|-----------------------
-	//   Identity(X)          |  X
-	//   Twox128(X)           |  Twox64(X, 0) + Twox64(X, 1)
-	//   Blake2_128(X)        |  Blake2_128(X)
-	//   Twox64Concat(X)      |  Twox64(X) + X
-	//   Blake2_128Concat(X)  |  Blake2_128(X) + X
-	//
+
 	//        FUNÇÃO(X)       |      QUANDO USAR
 	// -----------------------|------------------------------------------------
 	//                        |  A chave `X` é uniformemente distribuida
@@ -193,13 +186,13 @@ pub mod pallet {
 	//                        |  Ex: A entrada é uma texto, nome do pallet, etc.
 	// -----------------------|------------------------------------------------
 	//        Blake2_256      |  Um adversário consegue escolher a chave `X`
-	//        Blake2_128      |  
-	//                        |  Ex: Mais segura, na duvída sempre utiliza essas
+	//        Blake2_128      |  Ex: Mais segura, na duvída sempre utilize essas.
 	// ------------------------------------------------------------------------
 	//
 	// # Quando utilizar as varições com `*Concat` como `Blake2_128Concat`, etc.
-	// DICA: Utilize variações com `*_CONCAT` quando a chave X é pequena e precisa
-	// ser listada on-chain ou off-chain.
+	// DICA: Utilize variações com `*_CONCAT` quando a chave é pequena e precisa
+	// ser listada on-chain ou off-chain, imagine ela como um campo indexado no
+	// banco de dados.
 
 	/// Metadata of a collection.
 	#[pallet::storage]
