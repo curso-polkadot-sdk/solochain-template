@@ -121,11 +121,12 @@ pub mod pallet {
 		Blake2_128Concat,    // f(x) = blake2b(x, 128) | x
 
 		// ## QUERIES ##
-		// Definem o que será retornado por um MAP se a chave não existir do storage.
-		// IMPORTANTE: Isso tbm afeta o que será lido pelo cliente, ex: polkadot-api web.
+		// Define o que será retornado pelo STORAGE MAP quando a chave não existir no storage.
+		// IMPORTANTE: Isso é incluído no metadata do runtime, logo tbm afeta o que será retornado
+		// por um cliente interagindo com a blockchain, ex: cliente Web utilizando o polkadot-api.
 		//
 		OptionQuery,         // Se a chave não existir, retorne Option::None.       (null no javascript)
-		// ValueQuery,       // Se a chave não existir, retorne Default::default(). (valor default)
+		// ValueQuery,       // Se a chave não existir, retorne Default::default(). (valor default é encodado no metadata)
 		// ResultQuery,      // Se a chave não existir, retorne um Result::Err.     (Error no javascript)
 	};
 	use frame_system::pallet_prelude::{ensure_signed, OriginFor};
