@@ -91,6 +91,8 @@ pub mod pallet {
 		WeightInfo,
 	};
 	use frame_support::pallet_prelude::{
+		Hooks,
+		Weight,
 		DispatchResult,
 		IsType,
 		MaxEncodedLen,
@@ -102,7 +104,7 @@ pub mod pallet {
 		//
 		StorageValue,        // Armazena um único valor.
 		StorageMap,          // Mapeia chave para valor:        key  -> value
-		// StorageDoubleMap, // Mapeia duas chaves para valor: [x,y] -> value
+		// StorageDoubleMap,    // Mapeia duas chaves para valor: [x,y] -> value
 		// StorageNMap,      // Mapeia N chaves para valor:    [..n] -> value
 
 		// ## STORAGE HASHER ##
@@ -128,7 +130,7 @@ pub mod pallet {
 		// ValueQuery,       // Se a chave não existir, retorne Default::default(). (valor default é encodado no metadata)
 		// ResultQuery,      // Se a chave não existir, retorne um Result::Err.     (Error no javascript)
 	};
-	use frame_system::pallet_prelude::{ensure_signed, OriginFor};
+	use frame_system::pallet_prelude::{ensure_signed, OriginFor, BlockNumberFor};
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
@@ -141,7 +143,7 @@ pub mod pallet {
 	/// These types are defined generically and made concrete when the pallet is declared in the
 	/// `runtime/src/lib.rs` file of your chain.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: pallet_timestamp::Config + frame_system::Config {
 		/// The overarching runtime event type.
 		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -204,6 +206,9 @@ pub mod pallet {
 		OptionQuery,        // Define o que é retornado ao ler uma CHAVE que não existe.
 	>;
 
+	#[pallet::storage]
+    pub type BlockCounter<T: Config> = StorageValue<_, u32>;
+
 	/// Events that functions in this pallet can emit.
 	///
 	/// Events are a simple means of indicating to the outside world (such as dApps, chain explorers
@@ -247,28 +252,33 @@ pub mod pallet {
 		/// O token não existe
 		Unauthorized,
 	}
+	
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// A dummy `on_initialize` to return the amount of weight that `on_finalize` requires to
+		/// execute.
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			// weight of `on_finalize`
 
-	/// The pallet's dispatchable functions ([`Call`]s).
-	///
-	/// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	/// These functions materialize as "extrinsics", which are often compared to transactions.
-	/// They must always return a `DispatchResult` and be annotated with a weight and call index.
-	///
-	/// The [`call_index`] macro is used to explicitly
-	/// define an index for calls in the [`Call`] enum. This is useful for pallets that may
-	/// introduce new dispatchables over time. If the order of a dispatchable changes, its index
-	/// will also change which will break backwards compatibility.
-	///
-	/// The [`weight`] macro is used to assign a weight to each call.
+			// Como acessar a configuração de outro pallet
+			// <T as pallet_timestamp::Config>::Moment;
+			let horario_atual = pallet_timestamp::Pallet::<T>::get();
+
+			let block_counter = BlockCounter::<T>::get().unwrap_or(0).saturating_add(1);
+			BlockCounter::<T>::set(Some(block_counter));
+			Weight::from_parts(8_000_000, 1501)
+		}
+	}
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		
 		/// An example dispatchable that takes a single u32 value as a parameter, writes the value
 		/// to storage and emits an event.
 		///
 		/// It checks that the _origin_ for this call is _Signed_ and returns a dispatch
 		/// error if it isn't. Learn more about origins here: <https://docs.substrate.io/build/origins/>
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::alterar_valor())]
+		#[pallet::weight(<T as Config>::WeightInfo::alterar_valor())]
 		pub fn alterar_valor(origin: OriginFor<T>, valor: SaldoOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			let conta = ensure_signed(origin)?;
@@ -297,7 +307,7 @@ pub mod pallet {
 		/// - If incrementing the value in storage causes an arithmetic overflow
 		///   ([`Error::StorageOverflow`])
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::cause_error())]
+		#[pallet::weight(<T as Config>::WeightInfo::cause_error())]
 		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
 			let _who = ensure_signed(origin)?;
 
@@ -322,7 +332,7 @@ pub mod pallet {
 		/// - O valor não foi definido
 		/// - Overflow
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::incrementar())]
+		#[pallet::weight(<T as Config>::WeightInfo::incrementar())]
 		pub fn incrementar(origin: OriginFor<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// Verifica se essa `extrinsic` foi assinada:
@@ -358,7 +368,7 @@ pub mod pallet {
 
 		/// Cria um novo NFT e o transfere para a conta de quem assinou a transação.
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::incrementar())]
+		#[pallet::weight(<T as Config>::WeightInfo::incrementar())]
 		pub fn mint(origin: OriginFor<T>, token_id: u32) -> DispatchResult {
 			let conta = ensure_signed(origin)?;
 
@@ -366,25 +376,6 @@ pub mod pallet {
 				Tokens::<T>::insert(token_id, conta);
 			} else {
 				return Err(Error::<T>::TokenJaExiste.into());
-			}
-
-			Ok(())
-		}
-
-		/// Destroi um NFT se quem assinou a transação for o dono dele.
-		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::incrementar())]
-		pub fn burn(origin: OriginFor<T>, token_id: u32) -> DispatchResult {
-			let conta = ensure_signed(origin)?;
-			
-			if let Some(owner) = Tokens::<T>::get(&token_id) {
-				if conta == owner {
-					Tokens::<T>::remove(&token_id);
-				} else {
-					return Err(Error::<T>::Unauthorized.into());
-				} 
-			} else {
-				return Err(Error::<T>::TokenNotFound.into());
 			}
 
 			Ok(())
