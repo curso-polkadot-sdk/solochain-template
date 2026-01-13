@@ -263,9 +263,11 @@ pub mod pallet {
 			// Como acessar métodos de outro pallet
 			let _horario_atual = pallet_timestamp::Pallet::<T>::get();
 
+			// Incrementa o bloco atual.
 			let block_counter = BlockCounter::<T, I>::get().unwrap_or(0).saturating_add(1);
 			BlockCounter::<T, I>::set(Some(block_counter));
-			Weight::from_parts(8_000_000, 1501)
+
+			<T as Config<I>>::WeightInfo::on_initialize()
 		}
 	}
 

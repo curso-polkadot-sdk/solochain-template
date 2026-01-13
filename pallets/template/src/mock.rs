@@ -27,9 +27,12 @@ mod runtime {
 	pub type System = frame_system::Pallet<Test>;
 
 	#[runtime::pallet_index(1)]
-	pub type Balances = pallet_balances::Pallet<Test>;
+	pub type Timestamp = pallet_timestamp::Pallet<Test>;
 
 	#[runtime::pallet_index(2)]
+	pub type Balances = pallet_balances::Pallet<Test>;
+
+	#[runtime::pallet_index(3)]
 	pub type Template = pallet_template::Pallet<Test>;
 }
 

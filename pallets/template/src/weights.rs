@@ -31,6 +31,7 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for `pallet_template`.
 pub trait WeightInfo {
+	fn on_initialize() -> Weight;
 	fn alterar_valor() -> Weight;
 	fn cause_error() -> Weight;
 	fn incrementar() -> Weight;
@@ -40,8 +41,19 @@ pub trait WeightInfo {
 /// Weights for `pallet_template` using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	/// Storage: `Template::Valor` (r:0 w:1)
-	/// Proof: `Template::Valor` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	/// Storage: `Template::BlockCounter` (r:1 w:1)
+	/// Proof: `Template::BlockCounter` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	fn on_initialize() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11`
+		//  Estimated: `1489`
+		// Minimum execution time: 4_000_000 picoseconds.
+		Weight::from_parts(4_000_000, 1489)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Template::NextToken` (r:0 w:1)
+	/// Proof: `Template::NextToken` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn alterar_valor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -50,39 +62,37 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(5_000_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Template::Valor` (r:1 w:1)
-	/// Proof: `Template::Valor` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	/// Storage: `Template::NextToken` (r:1 w:1)
+	/// Proof: `Template::NextToken` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn cause_error() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `45`
-		//  Estimated: `1501`
+		//  Measured:  `32`
+		//  Estimated: `1489`
 		// Minimum execution time: 5_000_000 picoseconds.
-		Weight::from_parts(6_000_000, 1501)
+		Weight::from_parts(6_000_000, 1489)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Template::Valor` (r:1 w:1)
-	/// Proof: `Template::Valor` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	/// Storage: `Template::NextToken` (r:1 w:1)
+	/// Proof: `Template::NextToken` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn incrementar() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `45`
-		//  Estimated: `1501`
+		//  Measured:  `32`
+		//  Estimated: `1489`
 		// Minimum execution time: 8_000_000 picoseconds.
-		Weight::from_parts(8_000_000, 1501)
+		Weight::from_parts(8_000_000, 1489)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Template::Tokens` (r:1 w:1)
 	/// Proof: `Template::Tokens` (`max_values`: None, `max_size`: Some(52), added: 2527, mode: `MaxEncodedLen`)
 	/// The range of component `x` is `[7, 1000]`.
-	fn mint(x: u32, ) -> Weight {
+	fn mint(_x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `6`
 		//  Estimated: `3517`
 		// Minimum execution time: 6_000_000 picoseconds.
-		Weight::from_parts(6_394_476, 3517)
-			// Standard Error: 24
-			.saturating_add(Weight::from_parts(172, 0).saturating_mul(x.into()))
+		Weight::from_parts(6_985_379, 3517)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -90,8 +100,19 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests.
 impl WeightInfo for () {
-	/// Storage: `Template::Valor` (r:0 w:1)
-	/// Proof: `Template::Valor` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	/// Storage: `Template::BlockCounter` (r:1 w:1)
+	/// Proof: `Template::BlockCounter` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	fn on_initialize() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11`
+		//  Estimated: `1489`
+		// Minimum execution time: 4_000_000 picoseconds.
+		Weight::from_parts(4_000_000, 1489)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Template::NextToken` (r:0 w:1)
+	/// Proof: `Template::NextToken` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn alterar_valor() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -100,39 +121,37 @@ impl WeightInfo for () {
 		Weight::from_parts(5_000_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Template::Valor` (r:1 w:1)
-	/// Proof: `Template::Valor` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	/// Storage: `Template::NextToken` (r:1 w:1)
+	/// Proof: `Template::NextToken` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn cause_error() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `45`
-		//  Estimated: `1501`
+		//  Measured:  `32`
+		//  Estimated: `1489`
 		// Minimum execution time: 5_000_000 picoseconds.
-		Weight::from_parts(6_000_000, 1501)
+		Weight::from_parts(6_000_000, 1489)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Template::Valor` (r:1 w:1)
-	/// Proof: `Template::Valor` (`max_values`: Some(1), `max_size`: Some(16), added: 511, mode: `MaxEncodedLen`)
+	/// Storage: `Template::NextToken` (r:1 w:1)
+	/// Proof: `Template::NextToken` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn incrementar() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `45`
-		//  Estimated: `1501`
+		//  Measured:  `32`
+		//  Estimated: `1489`
 		// Minimum execution time: 8_000_000 picoseconds.
-		Weight::from_parts(8_000_000, 1501)
+		Weight::from_parts(8_000_000, 1489)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Template::Tokens` (r:1 w:1)
 	/// Proof: `Template::Tokens` (`max_values`: None, `max_size`: Some(52), added: 2527, mode: `MaxEncodedLen`)
 	/// The range of component `x` is `[7, 1000]`.
-	fn mint(x: u32, ) -> Weight {
+	fn mint(_x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `6`
 		//  Estimated: `3517`
 		// Minimum execution time: 6_000_000 picoseconds.
-		Weight::from_parts(6_394_476, 3517)
-			// Standard Error: 24
-			.saturating_add(Weight::from_parts(172, 0).saturating_mul(x.into()))
+		Weight::from_parts(6_985_379, 3517)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

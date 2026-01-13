@@ -5,11 +5,31 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Template;
 use frame_benchmarking::v2::*;
-use frame_system::{pallet_prelude::AccountIdFor, RawOrigin};
+use frame_support::{pallet_prelude::Zero, traits::Hooks};
+use frame_system::{
+	pallet_prelude::{AccountIdFor, BlockNumberFor},
+	RawOrigin,
+};
 
 #[benchmarks]
 mod benchmarks {
 	use super::*;
+
+	#[benchmark]
+	fn on_initialize() {
+		frame_benchmarking::benchmarking::add_to_whitelist(
+			frame_system::BlockHash::<T>::hashed_key_for(BlockNumberFor::<T>::zero()).into(),
+		);
+		frame_benchmarking::benchmarking::add_to_whitelist(
+			pallet_timestamp::Now::<T>::hashed_key().to_vec().into(),
+		);
+		let block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
+
+		#[block]
+		{
+			Template::<T>::on_initialize(block_number);
+		}
+	}
 
 	#[benchmark]
 	fn alterar_valor() {
