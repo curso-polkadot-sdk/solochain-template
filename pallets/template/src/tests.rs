@@ -1,4 +1,4 @@
-use crate::{mock::*, Error, Event, Valor};
+use crate::{mock::*, Error, Event, NextToken};
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
@@ -9,7 +9,7 @@ fn it_works_for_default_value() {
 		// Dispatch a signed extrinsic.
 		assert_ok!(Template::alterar_valor(RuntimeOrigin::signed(1), 42));
 		// Read pallet storage and assert an expected result.
-		assert_eq!(Valor::<Test>::get(), Some(42));
+		assert_eq!(NextToken::<Test>::get(), Some(42));
 		// Assert that the correct event was deposited
 		System::assert_last_event(Event::ValorArmazenado { valor: 42, conta: 1 }.into());
 	});

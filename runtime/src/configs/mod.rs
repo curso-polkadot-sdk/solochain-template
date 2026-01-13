@@ -181,6 +181,6 @@ impl pallet_sudo::Config for Runtime {
 // Veja o código fonte na pasta `pallets/template`.
 impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Saldo = Balance;
+	type TokenId = u32;
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
