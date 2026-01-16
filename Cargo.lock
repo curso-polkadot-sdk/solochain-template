@@ -6314,6 +6314,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-rsa-challenge"
+version = "0.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-session"
 version = "28.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?rev=dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76#dd54f6596a913ecc64ccbf7458d48e1f7dbe2d76"

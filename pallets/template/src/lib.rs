@@ -129,6 +129,8 @@ pub mod pallet {
 		Weight,
 	};
 	use frame_system::pallet_prelude::{ensure_signed, AccountIdFor, BlockNumberFor, OriginFor};
+	// use sp_core::{ConstU32, Get};
+	use sp_runtime::BoundedVec;
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
@@ -161,6 +163,9 @@ pub mod pallet {
 			+ TypeInfo
 			+ One;
 
+		/// Tipo que identifica unicamente um NFT.
+		type ContaCorreios: Get<AccountIdFor<Self>>;
+
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -173,6 +178,9 @@ pub mod pallet {
 	/// Aprenda mais sobre storage aqui: <https://docs.substrate.io/build/runtime-storage/>
 	#[pallet::storage]
 	pub type NextToken<T: Config<I>, I: 'static = ()> = StorageValue<_, T::TokenId>;
+
+	// #[pallet::storage]
+	// pub type ContaCorreios<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId>;
 
 	//        FUNÇÃO(X)       |      QUANDO USAR
 	// -----------------------|------------------------------------------------
@@ -378,6 +386,19 @@ pub mod pallet {
 			} else {
 				return Err(Error::<T, I>::TokenJaExiste.into());
 			}
+
+			Ok(())
+		}
+
+		/// Cria um novo NFT e o transfere para a conta de quem assinou a transação.
+		#[pallet::call_index(4)]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::mint(1))]
+		pub fn set_cpf(origin: OriginFor<T>, cpf: BoundedVec<u8, ConstU32<10>>) -> DispatchResult {
+			let conta = ensure_signed(origin)?;
+			if conta != <<T as Config<I>>::ContaCorreios as Get<AccountIdFor<T>>>::get() {
+				return Err(Error::<T, I>::Unauthorized.into());
+			}
+			// Light-Clients -> interoperabilidade
 
 			Ok(())
 		}
