@@ -165,7 +165,7 @@ pub mod pallet {
 			};
 
 			// Falha se `a*b !== challenge`
-			if product != challenge {
+			if product != challenge || a == 1 || b == 1 {
 				return Err(Error::<T, I>::WrongSolution.into());
 			}
 
