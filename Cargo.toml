@@ -6,13 +6,13 @@ license = "MIT-0"
 repository = "https://github.com/paritytech/polkadot-sdk-solochain-template.git"
 
 [workspace]
-members = ["node", "pallets/template", "pallets/rsa-challenge", "runtime"]
+members = ["node", "pallets/rsa-challenge", "pallets/template", "runtime"]
 resolver = "2"
 
 [workspace.dependencies]
 # members
-pallet-template = { path = "./pallets/template", default-features = false }
 pallet-rsa-challenge = { path = "./pallets/rsa-challenge", default-features = false }
+pallet-template = { path = "./pallets/template", default-features = false }
 solochain-template-node = { path = "./node", default-features = false }
 solochain-template-runtime = { path = "./runtime", default-features = false }
 

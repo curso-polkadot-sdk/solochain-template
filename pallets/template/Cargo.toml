@@ -27,9 +27,6 @@ frame-benchmarking = { optional = true, workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 
-# frame deps
-sp-runtime = { workspace = true, default-features = false, features = ["serde"] }
-
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = true }
 sp-core = { workspace = true, default-features = true }
@@ -47,7 +44,6 @@ std = [
 	"scale-info/std",
 	"sp-core/std",
 	"sp-io/std",
-	"sp-runtime/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -55,12 +51,10 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-timestamp/try-runtime",
-	"sp-runtime/try-runtime",
 ]

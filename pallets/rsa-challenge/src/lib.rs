@@ -52,14 +52,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use codec::{Codec, DecodeWithMemTracking, HasCompact};
-use frame_support::Parameter;
-use scale_info::TypeInfo;
-use sp_runtime::{
-	sp_std::fmt::Debug,
-	traits::{AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, Member, One},
-};
-
 // Every callable function or "dispatchable" a pallet exposes must have weight values that correctly
 // estimate a dispatchable's execution time. The benchmarking module is used to calculate weights
 // for each dispatchable and generates this pallet's weight.rs file. Learn more about benchmarking here: https://docs.substrate.io/test/benchmark/
@@ -75,7 +67,6 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
 	#[pallet::pallet]
@@ -87,7 +78,9 @@ pub mod pallet {
 	/// These types are defined generically and made concrete when the pallet is declared in the
 	/// `runtime/src/lib.rs` file of your chain.
 	#[pallet::config]
-	pub trait Config<I: 'static = ()>: pallet_balances::Config<I> + pallet_timestamp::Config + frame_system::Config {
+	pub trait Config<I: 'static = ()>:
+		pallet_balances::Config<I> + pallet_timestamp::Config + frame_system::Config
+	{
 		/// The overarching runtime event type.
 		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self, I>>
@@ -114,7 +107,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		Dummy,
+		ChallangeCreated { challenge: u128, prize: u32 },
 	}
 
 	#[pallet::error]
@@ -123,6 +116,8 @@ pub mod pallet {
 		Unauthorized,
 		/// Challenge doesn't exists
 		ChallengeNotFound,
+		/// Attempt to create a challenge that already exists
+		ChallengeAlreadyExists,
 		/// Wrong solution
 		WrongSolution,
 	}
@@ -132,49 +127,60 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::alterar_valor())]
 		pub fn set_challenge(origin: OriginFor<T>, challenge: u128, prize: u32) -> DispatchResult {
-			// TODO: emitir eventos
+			// 1. Garante que a origem é uma transação assinada por uma conta.
+			let _account = ensure_signed(origin)?;
 
-			// Check that the extrinsic was signed and get the signer.
-			let conta = ensure_signed(origin)?;
+			// 2. Verifica se esse challenge já existe.
+			if Products::<T, I>::get(&challenge).is_some() {
+				return Err(Error::<T, I>::ChallengeAlreadyExists.into());
+			};
 
-			// 1 - Bloquear os fundos da conta
-			// TODO: bloquear fundos aqui
+			// 3. Bloquear os fundos da conta, ou falhar se a conta não tiver fundos.
+			// TODO: bloquear `prize` em fundos da `account` aqui
 
-			// 2 - Salva o challenge no storage.
+			// 4. Salva o challenge no storage.
 			Products::<T, I>::insert(&challenge, prize);
+
+			// 5. Emite um evento informando que o challenge foi criado.
+			Self::deposit_event(Event::<T, I>::ChallangeCreated { challenge, prize });
 
 			Ok(())
 		}
 
 		#[pallet::call_index(1)]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::alterar_valor())]
-		pub fn submit_solution(origin: OriginFor<T>, challenge: u128, a: u128, b: u128) -> DispatchResult {
-			// TODO: emitir eventos
+		pub fn submit_solution(
+			origin: OriginFor<T>,
+			challenge: u128,
+			a: u128,
+			b: u128,
+		) -> DispatchResult {
+			// 1. Garante que a origem é uma transação assinada por uma conta.
+			let _account = ensure_signed(origin)?;
 
-			// Check that the extrinsic was signed and get the signer.
-			let conta = ensure_signed(origin)?;
-
-			// Verifica se o challenge existe
-			let Some(prize) = Products::<T, I>::get(&challenge) else {
+			// 2. Verifica se o challenge existe, se não retorne um erro.
+			let Some(_prize) = Products::<T, I>::get(&challenge) else {
 				return Err(Error::<T, I>::ChallengeNotFound.into());
 			};
 
-			// Multiplica A * B, falha se der overflow
+			// 3. Calcula `product = a * b`, falha se der overflow
 			let Some(product) = a.checked_mul(b) else {
 				return Err(Error::<T, I>::WrongSolution.into());
 			};
 
-			// Falha se `a*b !== challenge`
-			if product != challenge || a == 1 || b == 1 {
+			// 3. Falha se `a == 1` ou  `b == 1` ou `a * b != challenge`
+			if a == 1 || b == 1 || product != challenge {
 				return Err(Error::<T, I>::WrongSolution.into());
 			}
 
-			// Desafio concluido
-			// 1 - Pagar o premio para a `conta`
-			// TODO: transferir para `conta` o `prize`.
+			// 4. Paga o prêmio `prize` para a conta `account`
+			// TODO: transferir para `account` o `prize`.
 
-			// 2 - Apagar o desafio
+			// 5 - Remove o desafio do storage
 			Products::<T, I>::remove(&challenge);
+
+			// 6. Emitir um evento informando que o desafio foi concluído.
+			// TODO
 
 			Ok(())
 		}

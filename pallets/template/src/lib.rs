@@ -52,14 +52,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use codec::{Codec, DecodeWithMemTracking, HasCompact};
-use frame_support::Parameter;
-use scale_info::TypeInfo;
-use sp_runtime::{
-	sp_std::fmt::Debug,
-	traits::{AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, Member, One},
-};
-
 /// Apelido utilizado para se referir ao `TokenId` definido
 /// na configuração desse pallet.
 /// ```rust
@@ -83,65 +75,102 @@ pub use weights::{SubstrateWeight, WeightInfo};
 // All pallet logic is defined in its own module and must be annotated by the `pallet` attribute.
 #[frame_support::pallet]
 pub mod pallet {
-	// Import various useful types required by all FRAME pallets.
-	use super::{
-		AtLeast32BitUnsigned, CheckedAdd, Codec, Debug, DecodeWithMemTracking, HasCompact,
-		MaybeSerializeDeserialize, Member, One, Parameter, TokenIdOf, TypeInfo, WeightInfo,
-	};
-	use frame_support::pallet_prelude::{
-		// StorageDoubleMap,    // Mapeia duas chaves para valor: [x,y] -> value
-		// StorageNMap,      // Mapeia N chaves para valor:    [..n] -> value
+	use super::{TokenIdOf, WeightInfo};
+
+	#[allow(unused_imports)]
+	use frame_support::{
+		dispatch::DispatchResult,
+		sp_runtime::{
+			codec::{Codec, DecodeWithMemTracking, HasCompact, MaxEncodedLen},
+			scale_info::TypeInfo,
+			sp_std::fmt::Debug,
+			traits::{AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, Member, One},
+		},
+		storage::types::{
+			// ## QUERIES ##
+			// Define o que será retornado pelo STORAGE MAP quando a chave
+			// não existir no storage.
+			// IMPORTANTE: Isso é incluído no metadata do runtime, logo tbm
+			// afeta o que será retornado por um cliente interagindo com a
+			// blockchain, ex: cliente Web utilizando o polkadot-api.
+			//
+			// Option: Se a chave não existir, retorne Option::None.
+			OptionQuery,
+
+			// Result: Se a chave não existir, retorne Result::Err(error).
+			ResultQuery,
+
+			// Mapeia duas chaves para valor: [x,y] -> value
+			StorageDoubleMap,
+
+			// Mapeia uma chave para valor:     key -> value
+			StorageMap,
+
+			// Mapeia N chaves para valor:    [..n] -> value
+			StorageNMap,
+
+			// Mapeia duas chaves para valor: [x,y] -> value
+			StorageValue,
+
+			//  Value: Se a chave não existir, retorne Default::default().
+			ValueQuery,
+		},
+
+		// outros tipos
+		traits::{Hooks, IsType},
+		weights::Weight,
+		// f(x) = blake2b(x, 128)
+		Blake2_128,
+
+		// f(x) = blake2b(x, 128) | x
+		Blake2_128Concat,
+
+		// f(x) = blake2b(x, 256)
+		Blake2_256,
 
 		// ## STORAGE HASHER ##
-		// É uma função que mapeia uma chave `X` para bytes que serão concatenados
-		// na chave final do storage, lembre-se que é um banco de dados chave-valor.
+		// É uma função que mapeia uma chave `X` para bytes que serão
+		// concatenados na chave final do storage, lembre-se que é um
+		// banco de dados chave-valor.
 		// Código: https://github.com/paritytech/polkadot-sdk/blob/polkadot-stable2512/substrate/primitives/crypto/hashing/src/lib.rs#L63-L123
 		// NOTA: `a | b` significa concatenar a e b.
 		//
-		// Identity,         // f(x) = x
-		// Twox128,          // f(x) = xxhash64(x, 0) | xxhash64(x, 1)
-		// Twox256,          // f(x) = xxhash64(x, 0) | xxhash64(x, 1) | xxhash64(x, 2) |
-		// xxhash64(x, 3) Twox64Concat,     // f(x) = xxhash64(x, 0) | x
-		// Blake2_128,       // f(x) = blake2b(x, 128)
-		// Blake2_256,       // f(x) = blake2b(x, 256)
-		Blake2_128Concat, // f(x) = blake2b(x, 128) | x
+		// f(x) = x
+		Identity,
 
-		DispatchResult,
-		Hooks,
-		IsType,
-		MaxEncodedLen,
+		Parameter,
+		// f(x) = xxhash64(x, 0) | xxhash64(x, 1)
+		Twox128,
 
-		// ## QUERIES ##
-		// Define o que será retornado pelo STORAGE MAP quando a chave não existir no storage.
-		// IMPORTANTE: Isso é incluído no metadata do runtime, logo tbm afeta o que será retornado
-		// por um cliente interagindo com a blockchain, ex: cliente Web utilizando o polkadot-api.
-		OptionQuery, /* Se a chave não existir, retorne Option::None.       (null no javascript)
-		              * ValueQuery,       // Se a chave não existir, retorne Default::default().
-		              * (valor default é encodado no metadata) ResultQuery,
-		              * // Se a chave não existir, retorne um Result::Err.     (Error no
-		              * javascript) */
-		StorageMap, // Mapeia chave para valor:        key  -> value
-		// ## STORAGE ##
-		// Define como os dados são armazenados, encodados e lidos.
-		// Todos os storages definidos no pallet possuem o mesmo prefixo:
-		// Twox128($NOME_PALLET) + Twox128($NOME_STORAGE)
-		StorageValue, // Armazena um único valor.
-		Weight,
+		// f(x) = xxhash64(x, 0) | xxhash64(x, 1) | xxhash64(x, 2) | xxhash64(x, 3)
+		Twox256,
+
+		// f(x) = xxhash64(x, 0) | x
+		Twox64Concat,
 	};
-	use frame_system::pallet_prelude::{ensure_signed, AccountIdFor, BlockNumberFor, OriginFor};
-	// use sp_core::{ConstU32, Get};
-	use sp_runtime::BoundedVec;
+	#[allow(unused_imports)]
+	use frame_system::{
+		ensure_none,   // Verifica que a origem é uma transação não assinada.
+		ensure_root,   // Verifica que a origem é o super usuário.
+		ensure_signed, // Verifica que a origem representa uma transação assinada.
+		pallet_prelude::{
+			// `AccountIdFor<T>` é equivalente a `<T as frame_system::Config>::AccountId`
+			AccountIdFor,
+
+			// `BlockNumberFor<T>` é equivalente a `<T as frame_system::Config>::BlockNumber`
+			BlockNumberFor,
+
+			// `OriginFor<T>` é equivalente a `<T as frame_system::Config>::Origin`
+			OriginFor,
+		},
+	};
 
 	// The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
 	// (`Call`s) in this pallet.
 	#[pallet::pallet]
 	pub struct Pallet<T, I = ()>(_);
 
-	/// The pallet's configuration trait.
-	///
-	/// All our types and constants a pallet depends on must be declared here.
-	/// These types are defined generically and made concrete when the pallet is declared in the
-	/// `runtime/src/lib.rs` file of your chain.
+	/// Configuração do pallet-template
 	#[pallet::config]
 	pub trait Config<I: 'static = ()>: pallet_timestamp::Config + frame_system::Config {
 		/// The overarching runtime event type.
@@ -163,26 +192,24 @@ pub mod pallet {
 			+ TypeInfo
 			+ One;
 
-		/// Tipo que identifica unicamente um NFT.
-		type ContaCorreios: Get<AccountIdFor<Self>>;
-
 		/// A type representing the weights required by the dispatchables of this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
 	/// Valor é um número armazenado nesse pallet.
 	///
-	/// Nesse template esta sendo declarado um Item no storage chamado `Valor` que armazena um
-	/// valor do tipo `Config::Saldo`.
+	/// Nesse template esta sendo declarado um Item no storage chamado `NextToken`
+	/// que armazena um valor do tipo `Config::TokenId`.
 	///
 	/// Aprenda mais sobre storage aqui: <https://docs.substrate.io/build/runtime-storage/>
 	#[pallet::storage]
 	pub type NextToken<T: Config<I>, I: 'static = ()> = StorageValue<_, T::TokenId>;
 
-	// #[pallet::storage]
-	// pub type ContaCorreios<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId>;
-
-	//        FUNÇÃO(X)       |      QUANDO USAR
+	// Os tipos `StorageMap`, `StorageDoubleMap` e `StorageNMap` precisam de uma
+	// função para mapear uma chave para uma storage-key chamada Storage Hasher,
+	// a tabela a seguir descreve quando utilizar cada storage hasher.
+	//
+	//        FUNÇÃO(X)       |                  QUANDO USAR
 	// -----------------------|------------------------------------------------
 	//                        |  A chave `X` é uniformemente distribuida
 	//        Identity        |  Um adversário não consegue escolher a chave `X`.
@@ -200,7 +227,7 @@ pub mod pallet {
 	// DICA: Utilize variações com `*_CONCAT` quando a chave é pequena e precisa
 	// ser listada on-chain ou off-chain, imagine ela como um campo indexado no
 	// banco de dados.
-
+	//
 	/// Metadata of a collection.
 	#[pallet::storage]
 	pub type Tokens<T: Config<I>, I: 'static = ()> = StorageMap<
@@ -263,8 +290,6 @@ pub mod pallet {
 		/// A dummy `on_initialize` to return the amount of weight that `on_finalize` requires to
 		/// execute.
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			// weight of `on_finalize`
-
 			// Como acessar a configuração de outro pallet
 			let _horario_default = <T as pallet_timestamp::Config>::Moment::default();
 
@@ -275,7 +300,8 @@ pub mod pallet {
 			let block_counter = BlockCounter::<T, I>::get().unwrap_or(0).saturating_add(1);
 			BlockCounter::<T, I>::set(Some(block_counter));
 
-			<T as Config<I>>::WeightInfo::on_initialize()
+			// Retorna o quanto de `weight` foi consumido.
+			<<T as Config<I>>::WeightInfo as WeightInfo>::on_initialize()
 		}
 	}
 
@@ -287,7 +313,7 @@ pub mod pallet {
 		/// It checks that the _origin_ for this call is _Signed_ and returns a dispatch
 		/// error if it isn't. Learn more about origins here: <https://docs.substrate.io/build/origins/>
 		#[pallet::call_index(0)]
-		#[pallet::weight(<T as Config<I>>::WeightInfo::alterar_valor())]
+		#[pallet::weight(<<T as Config<I>>::WeightInfo as WeightInfo>::alterar_valor())]
 		pub fn alterar_valor(origin: OriginFor<T>, valor: TokenIdOf<T, I>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			let conta = ensure_signed(origin)?;
@@ -316,7 +342,7 @@ pub mod pallet {
 		/// - If incrementing the value in storage causes an arithmetic overflow
 		///   ([`Error::StorageOverflow`])
 		#[pallet::call_index(1)]
-		#[pallet::weight(<T as Config<I>>::WeightInfo::cause_error())]
+		#[pallet::weight(<<T as Config<I>>::WeightInfo as WeightInfo>::cause_error())]
 		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
 			let _who = ensure_signed(origin)?;
 
@@ -341,7 +367,7 @@ pub mod pallet {
 		/// - O valor não foi definido
 		/// - Overflow
 		#[pallet::call_index(2)]
-		#[pallet::weight(<T as Config<I>>::WeightInfo::incrementar())]
+		#[pallet::weight(<<T as Config<I>>::WeightInfo as WeightInfo>::incrementar())]
 		pub fn incrementar(origin: OriginFor<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// Verifica se essa `extrinsic` foi assinada:
@@ -377,7 +403,7 @@ pub mod pallet {
 
 		/// Cria um novo NFT e o transfere para a conta de quem assinou a transação.
 		#[pallet::call_index(3)]
-		#[pallet::weight(<T as Config<I>>::WeightInfo::mint(1))]
+		#[pallet::weight(<<T as Config<I>>::WeightInfo as WeightInfo>::mint(1))]
 		pub fn mint(origin: OriginFor<T>, token_id: TokenIdOf<T, I>) -> DispatchResult {
 			let conta = ensure_signed(origin)?;
 
@@ -386,19 +412,6 @@ pub mod pallet {
 			} else {
 				return Err(Error::<T, I>::TokenJaExiste.into());
 			}
-
-			Ok(())
-		}
-
-		/// Cria um novo NFT e o transfere para a conta de quem assinou a transação.
-		#[pallet::call_index(4)]
-		#[pallet::weight(<T as Config<I>>::WeightInfo::mint(1))]
-		pub fn set_cpf(origin: OriginFor<T>, cpf: BoundedVec<u8, ConstU32<10>>) -> DispatchResult {
-			let conta = ensure_signed(origin)?;
-			if conta != <<T as Config<I>>::ContaCorreios as Get<AccountIdFor<T>>>::get() {
-				return Err(Error::<T, I>::Unauthorized.into());
-			}
-			// Light-Clients -> interoperabilidade
 
 			Ok(())
 		}
