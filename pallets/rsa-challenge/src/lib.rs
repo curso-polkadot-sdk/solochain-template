@@ -181,25 +181,25 @@ pub mod pallet {
 				return Err(Error::<T, I>::InvalidChallenge.into());
 			}
 
-			// 3. Verifica se esse challenge já existe.
-			if Products::<T, I>::get(&challenge).is_some() {
-				return Err(Error::<T, I>::ChallengeAlreadyExists.into());
-			};
-
-			// 4. Bloquear os fundos da conta, ou falhar se a conta não tiver fundos.
-			<CurrencyFor<T, I> as ReservableCurrency<AccountIdFor<T>>>::reserve(&account, prize)?;
-
-			// 5. Salva o challenge no storage.
+			// 3. O challenge não pode ser criado com data de termino anterior ao horário atual.
 			let now = pallet_timestamp::Pallet::<T>::get();
 			if now >= end_date {
 				return Err(Error::<T, I>::InvalidChallenge.into());
 			}
 
+			// 4. Falha se esse challenge já existe.
+			if Products::<T, I>::get(&challenge).is_some() {
+				return Err(Error::<T, I>::ChallengeAlreadyExists.into());
+			};
+
+			// 5. Bloqueia os fundos da conta, ou falha se a conta não tiver fundos suficientes.
+			<CurrencyFor<T, I> as ReservableCurrency<AccountIdFor<T>>>::reserve(&account, prize)?;
+
 			// 6. Salva o challenge no storage.
 			let challenge_details = ChallengeDetails { owner: account, prize, end_date };
 			Products::<T, I>::insert(&challenge, challenge_details);
 
-			// 7. Emite um evento informando que o challenge foi criado.
+			// 7. Emite um evento informando que o challenge foi criado com sucesso.
 			Self::deposit_event(Event::<T, I>::ChallangeCreated { challenge, prize });
 
 			Ok(())
