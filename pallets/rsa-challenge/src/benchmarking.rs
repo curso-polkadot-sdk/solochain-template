@@ -3,7 +3,9 @@
 use super::*;
 
 #[allow(unused)]
-use crate::{BalanceFor, ChallengeDetailsFor, CurrencyFor, pallet::Pallet as RsaChallenge, pallet::Products};
+use crate::{
+	pallet::Pallet as RsaChallenge, pallet::Products, BalanceFor, ChallengeDetailsFor, CurrencyFor,
+};
 use frame_benchmarking::v2::*;
 use frame_support::traits::Currency;
 use frame_system::{pallet_prelude::AccountIdFor, RawOrigin};

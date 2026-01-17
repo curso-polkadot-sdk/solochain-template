@@ -64,19 +64,12 @@ mod benchmarking;
 pub mod weights;
 pub use weights::{SubstrateWeight, WeightInfo};
 
-// Definir alias
-use frame_support::{sp_runtime::traits::StaticLookup, traits::Currency};
+use frame_support::traits::Currency;
 use frame_system::pallet_prelude::AccountIdFor;
+
+// Apelidos para tipois comuns.
 pub type CurrencyFor<T, I = ()> = pallet_balances::Pallet<T, I>;
 pub type BalanceFor<T, I = ()> = <CurrencyFor<T, I> as Currency<AccountIdFor<T>>>::Balance;
-pub type PositiveImbalanceFor<T, I = ()> =
-	<CurrencyFor<T, I> as Currency<AccountIdFor<T>>>::PositiveImbalance;
-pub type NegativeImbalanceFor<T, I = ()> =
-	<CurrencyFor<T, I> as Currency<AccountIdFor<T>>>::NegativeImbalance;
-
-pub type LookupFor<T> = <T as frame_system::Config>::Lookup;
-pub type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
-// pub type BalanceFor<T, I = ()> = <T as pallet_balances::Config<I>>::Balance;
 pub type MomentFor<T> = <T as pallet_timestamp::Config>::Moment;
 pub type ChallengeDetailsFor<T, I = ()> = types::ChallengeDetails<
 	<T as frame_system::Config>::AccountId,
@@ -84,7 +77,6 @@ pub type ChallengeDetailsFor<T, I = ()> = types::ChallengeDetails<
 	<T as pallet_timestamp::Config>::Moment,
 >;
 
-// All pallet logic is defined in its own module and must be annotated by the `pallet` attribute.
 #[frame_support::pallet]
 pub mod pallet {
 	use super::{
@@ -96,7 +88,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::DispatchResult,
 		sp_runtime::{
-			codec::{Codec, DecodeWithMemTracking, HasCompact, MaxEncodedLen},
+			codec::{Codec, Decode, DecodeWithMemTracking, Encode, HasCompact, MaxEncodedLen},
 			scale_info::TypeInfo,
 			sp_std::fmt::Debug,
 			traits::{
@@ -114,18 +106,9 @@ pub mod pallet {
 	};
 	#[allow(unused_imports)]
 	use frame_system::{
-		ensure_none,   // Verifica que a origem é uma transação não assinada.
-		ensure_root,   // Verifica que a origem é o super usuário.
-		ensure_signed, // Verifica que a origem representa uma transação assinada.
+		ensure_authorized, ensure_none, ensure_root, ensure_signed, ensure_signed_or_root,
 		pallet_prelude::{
-			// `AccountIdFor<T>` é equivalente a `<T as frame_system::Config>::AccountId`
-			AccountIdFor,
-
-			// `BlockNumberFor<T>` é equivalente a `<T as frame_system::Config>::BlockNumber`
-			BlockNumberFor,
-
-			// `OriginFor<T>` é equivalente a `<T as frame_system::Config>::Origin`
-			OriginFor,
+			AccountIdFor, BlockNumberFor, ExtrinsicFor, HeaderFor, OriginFor, RuntimeCallFor,
 		},
 	};
 
@@ -134,11 +117,7 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T, I = ()>(_);
 
-	/// The pallet's configuration trait.
-	///
-	/// All our types and constants a pallet depends on must be declared here.
-	/// These types are defined generically and made concrete when the pallet is declared in the
-	/// `runtime/src/lib.rs` file of your chain.
+	/// Configuração do pallet
 	#[pallet::config]
 	pub trait Config<I: 'static = ()>:
 		pallet_balances::Config<I> + pallet_timestamp::Config + frame_system::Config
@@ -152,16 +131,13 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 	}
 
-	/// Valor é um número armazenado nesse pallet.
-	/// - Quem que criou o challenge
-	/// - O prazo do challenge (data ou blocos)
+	/// Armazena os detalhes de um RSA Challenge.
 	#[pallet::storage]
 	pub type Products<T: Config<I>, I: 'static = ()> = StorageMap<
 		_,
 		Blake2_128Concat,
-		u128, // Challenge: é o resultado da multiplicação de dois numeros
-		ChallengeDetailsFor<T, I>, /* Prize: premios que será pago para quem descobrir os dois
-		       * numeros */
+		u128,                      // RSA Challenge
+		ChallengeDetailsFor<T, I>, // Detalhes do Challenge
 		OptionQuery,
 	>;
 
@@ -255,12 +231,12 @@ pub mod pallet {
 				return Err(Error::<T, I>::WrongSolution.into());
 			};
 
-			// 5. Falha se `a == 1` ou  `b == 1` ou `a * b != challenge`
+			// 5. Falha se `a == 1` ou `b == 1` ou `a * b != challenge`
 			if a == 1 || b == 1 || product != challenge {
 				return Err(Error::<T, I>::WrongSolution.into());
 			}
 
-			// 6. Libera os fundos bloqueados do criador do challenge.
+			// 6. Libera os fundos bloqueados na conta do criador do challenge.
 			<CurrencyFor<T, I> as ReservableCurrency<AccountIdFor<T>>>::unreserve(
 				&details.owner,
 				details.prize,
@@ -277,7 +253,7 @@ pub mod pallet {
 			// 8 - Remove o desafio do storage
 			Products::<T, I>::remove(&challenge);
 
-			// 9. Emitir um evento informando que o desafio foi concluído.
+			// 9. Emite um evento informando que o desafio foi concluído.
 			// TODO
 
 			Ok(())

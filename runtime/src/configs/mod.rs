@@ -185,8 +185,8 @@ impl pallet_template::Config for Runtime {
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
 
-// Configuração do pallet-template
-// Veja o código fonte na pasta `pallets/template`.
+// Configuração do pallet-rsa-challenge
+// Veja o código fonte na pasta `pallets/rsa-challenge`.
 impl pallet_rsa_challenge::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
