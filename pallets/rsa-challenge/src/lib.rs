@@ -83,27 +83,69 @@ pub mod pallet {
 		types::ChallengeDetails, weights::WeightInfo, BalanceFor, ChallengeDetailsFor, CurrencyFor,
 		MomentFor,
 	};
-	use frame_support::traits::{Currency, ExistenceRequirement, ReservableCurrency};
 	#[allow(unused_imports)]
 	use frame_support::{
 		dispatch::DispatchResult,
 		sp_runtime::{
-			codec::{Codec, Decode, DecodeWithMemTracking, Encode, HasCompact, MaxEncodedLen},
-			scale_info::TypeInfo,
+			codec::{
+				Codec, Compact, CompactAs, CompactLen, CompactRef, CountedInput, Decode, DecodeAll,
+				DecodeLength, DecodeLimit, DecodeWithMemLimit, DecodeWithMemTracking, Encode,
+				EncodeAppend, EncodeAsRef, EncodeLike, FullCodec, FullEncode, HasCompact, Input,
+				MaxEncodedLen, MemTrackingInput, OptionBool, Output, WrapperTypeDecode,
+				WrapperTypeEncode,
+			},
+			scale_info::{
+				IntoPortable, MetaType, PortableRegistry, PortableRegistryBuilder, PortableType,
+				Registry, StaticTypeInfo, TypeInfo,
+			},
 			sp_std::fmt::Debug,
 			traits::{
-				AtLeast32BitUnsigned, CheckedAdd, Lookup, MaybeSerializeDeserialize, Member, One,
+				AtLeast32BitUnsigned, Bounded, CheckedAdd, CheckedDiv, CheckedMul, CheckedShl,
+				CheckedShr, CheckedSub, ConstBool, ConstI128, ConstI16, ConstI32, ConstI64,
+				ConstI8, ConstInt, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, ConstUint,
+				Ensure, EnsureAdd, EnsureAddAssign, EnsureDiv, EnsureDivAssign,
+				EnsureFixedPointNumber, EnsureFrom, EnsureInto, EnsureMul, EnsureMulAssign,
+				EnsureOp, EnsureOpAssign, EnsureSub, EnsureSubAssign, Get, GetDefault,
+				IntegerSquareRoot, Lookup, MaybeSerializeDeserialize, Member, One,
+				SaturatedConversion, Saturating, TryCollect, TypedGet, UniqueSaturatedFrom,
+				UniqueSaturatedInto, Zero,
 			},
 		},
 		storage::types::{
 			OptionQuery, ResultQuery, StorageDoubleMap, StorageMap, StorageNMap, StorageValue,
 			ValueQuery,
 		},
-		traits::{Hooks, IsType},
-		weights::Weight,
-		Blake2_128, Blake2_128Concat, Blake2_256, Identity, Parameter, Twox128, Twox256,
+		traits::{
+			tokens::{
+				currency::{
+					ActiveIssuanceOf, Currency, InspectLockableCurrency, LockIdentifier,
+					LockableCurrency, NamedReservableCurrency, ReservableCurrency, TotalIssuanceOf,
+					VestedTransfer, VestingSchedule,
+				},
+				fungible, fungibles,
+				imbalance::{Imbalance, OnUnbalanced, SignedImbalance},
+				nonfungible, nonfungible_v2, nonfungibles, nonfungibles_v2, BalanceStatus,
+				ExistenceRequirement, Locker, WithdrawReasons,
+			},
+			BeforeAllRuntimeMigrations, BuildGenesisConfig, Consideration, ConstantStoragePrice,
+			Disabled, Hooks, Incrementable, Instance, IntegrityTest, IsType, OnFinalize, OnGenesis,
+			OnIdle, OnInitialize, OnPoll, OnRuntimeUpgrade, OnTimestampSet,
+			PartialStorageInfoTrait, PostInherents, PostTransactions, PreInherents,
+			StorageInstance, SuppressedDrop, UncheckedOnRuntimeUpgrade,
+		},
+		weights::{
+			constants::{
+				BlockExecutionWeight, ExtrinsicBaseWeight, ParityDbWeight, RocksDbWeight,
+				WEIGHT_PROOF_SIZE_PER_KB, WEIGHT_PROOF_SIZE_PER_MB, WEIGHT_REF_TIME_PER_MICROS,
+				WEIGHT_REF_TIME_PER_MILLIS, WEIGHT_REF_TIME_PER_NANOS, WEIGHT_REF_TIME_PER_SECOND,
+			},
+			ConstantMultiplier, FeePolynomial, FixedFee, NoFee, RuntimeDbWeight, Weight,
+			WeightToFee, WeightToFeeCoefficient,
+		},
+		Blake2_128, Blake2_128Concat, Blake2_256, Hashable, Identity, Parameter, Twox128, Twox256,
 		Twox64Concat,
 	};
+
 	#[allow(unused_imports)]
 	use frame_system::{
 		ensure_authorized, ensure_none, ensure_root, ensure_signed, ensure_signed_or_root,
