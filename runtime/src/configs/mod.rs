@@ -184,3 +184,10 @@ impl pallet_template::Config for Runtime {
 	type TokenId = u32;
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
+
+// Configuração do pallet-template
+// Veja o código fonte na pasta `pallets/template`.
+impl pallet_rsa_challenge::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+}

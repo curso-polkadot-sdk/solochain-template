@@ -24,3 +24,13 @@ fi
 	--wasm-execution=compiled \
 	--output='pallets/template/src/weights.rs' \
 	--template='./.maintain/frame-weight-template.hbs'
+
+./target/release/solochain-template-node benchmark pallet \
+	--chain=dev \
+	--pallet=pallet_rsa_challenge \
+	--extrinsic='*' \
+	--steps=50 \
+	--repeat=200 \
+	--wasm-execution=compiled \
+	--output='pallets/rsa-challenge/src/weights.rs' \
+	--template='./.maintain/frame-weight-template.hbs'

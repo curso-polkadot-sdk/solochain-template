@@ -3,77 +3,48 @@
 use super::*;
 
 #[allow(unused)]
-use crate::Pallet as Template;
+use crate::{BalanceFor, ChallengeDetailsFor, CurrencyFor, pallet::Pallet as RsaChallenge, pallet::Products};
 use frame_benchmarking::v2::*;
-use frame_support::{pallet_prelude::Zero, traits::Hooks};
-use frame_system::{
-	pallet_prelude::{AccountIdFor, BlockNumberFor},
-	RawOrigin,
-};
+use frame_support::traits::Currency;
+use frame_system::{pallet_prelude::AccountIdFor, RawOrigin};
 
 #[benchmarks]
 mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn on_initialize() {
-		frame_benchmarking::benchmarking::add_to_whitelist(
-			frame_system::BlockHash::<T>::hashed_key_for(BlockNumberFor::<T>::zero()).into(),
+	fn set_challenge() {
+		// Configuração do RSA Challenge.
+		let caller: AccountIdFor<T> = whitelisted_caller();
+		let prize = BalanceFor::<T>::from(1234u32);
+		let end_date = pallet_timestamp::Pallet::<T>::get() + MomentFor::<T>::from(10u32);
+		let details = ChallengeDetailsFor::<T> { owner: caller.clone(), prize, end_date };
+
+		// Encontre um challenge que não existe
+		let mut challenge = 77u128;
+		while Products::<T>::get(&challenge).is_some() {
+			challenge += 2;
+		}
+
+		// Adiciona fundos na conta.
+		let mut new_balance =
+			<CurrencyFor<T> as Currency<AccountIdFor<T>>>::total_balance(&details.owner);
+		new_balance += <CurrencyFor<T> as Currency<AccountIdFor<T>>>::minimum_balance();
+		new_balance += prize;
+		let _ = <CurrencyFor<T> as Currency<AccountIdFor<T>>>::make_free_balance_be(
+			&caller,
+			new_balance,
 		);
+
+		// Desconsidera o custo de ler o `pallet_timestamp::Now`, pois esse
+		// valor fica em cache.
 		frame_benchmarking::benchmarking::add_to_whitelist(
 			pallet_timestamp::Now::<T>::hashed_key().to_vec().into(),
 		);
-		let block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
 
-		#[block]
-		{
-			Template::<T>::on_initialize(block_number);
-		}
-	}
-
-	#[benchmark]
-	fn alterar_valor() {
-		let value = TokenIdOf::<T>::from(100u32);
-		let caller: AccountIdFor<T> = whitelisted_caller();
+		// Chama a extrinsic
 		#[extrinsic_call]
-		alterar_valor(RawOrigin::Signed(caller), value);
-		assert_eq!(NextToken::<T>::get(), Some(value));
-	}
-
-	#[benchmark]
-	fn cause_error() {
-		let hundred = TokenIdOf::<T>::from(100u32);
-		let hundred_one = TokenIdOf::<T>::from(101u32);
-		NextToken::<T>::put(hundred);
-		let caller: AccountIdFor<T> = whitelisted_caller();
-		#[extrinsic_call]
-		cause_error(RawOrigin::Signed(caller));
-		assert_eq!(NextToken::<T>::get(), Some(hundred_one));
-	}
-
-	#[benchmark]
-	fn incrementar() {
-		let hundred = TokenIdOf::<T>::from(100u32);
-		let hundred_one = TokenIdOf::<T>::from(101u32);
-		NextToken::<T>::put(hundred);
-		let caller: AccountIdFor<T> = whitelisted_caller();
-		#[extrinsic_call]
-		incrementar(RawOrigin::Signed(caller));
-		assert_eq!(NextToken::<T>::get(), Some(hundred_one));
-	}
-
-	#[benchmark]
-	fn mint(x: Linear<7, 1_000>) {
-		// setup
-		let caller: AccountIdFor<T> = whitelisted_caller();
-		let token_id: TokenIdOf<T> = x.into();
-		assert_eq!(Tokens::<T>::get(&token_id), None);
-
-		#[extrinsic_call]
-		mint(RawOrigin::Signed(caller.clone()), token_id);
-
-		// verification
-		assert_eq!(Tokens::<T>::get(&token_id), Some(caller));
+		set_challenge(RawOrigin::Signed(caller), challenge, details.prize, details.end_date);
 	}
 
 	impl_benchmark_test_suite!(Template, crate::mock::new_test_ext(), crate::mock::Test);

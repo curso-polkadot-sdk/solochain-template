@@ -219,4 +219,8 @@ mod runtime {
 	// Include the custom logic from the pallet-template in the runtime.
 	#[runtime::pallet_index(7)]
 	pub type Template = pallet_template;
+
+	// Include the custom logic from the pallet-template in the runtime.
+	#[runtime::pallet_index(8)]
+	pub type RsaChallenge = pallet_rsa_challenge;
 }

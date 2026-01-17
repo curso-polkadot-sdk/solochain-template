@@ -10073,6 +10073,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
+ "pallet-rsa-challenge",
  "pallet-sudo",
  "pallet-template",
  "pallet-timestamp",
